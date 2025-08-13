@@ -472,4 +472,4 @@ Visit `http://localhost:3000` to see the integration in action.
 
 ---
 
-**Need Help?** Contact our support team at support@valuepayng.com or visit our [developer portal](https://developers.valuepayng.com) for additional resources.
+**Need Help?** Contact our support team at or customercare@valuepay.ng contact@valuepay.ng for additional resources.
