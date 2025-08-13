@@ -334,102 +334,6 @@ const paymentData = {
 };
 ```
 
-### 4. Server-Side Payment Verification
-
-Create an API route to verify payments:
-
-```tsx
-// app/api/verify-payment/route.ts
-import { NextRequest, NextResponse } from "next/server";
-
-export async function POST(request: NextRequest) {
-  try {
-    const { transactionRef } = await request.json();
-
-    const response = await fetch(
-      "https://api.valuepayng.com/v1/transaction/verify",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.VALUEPAY_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transactionRef: transactionRef,
-        }),
-      }
-    );
-
-    const verification = await response.json();
-
-    if (!response.ok) {
-      throw new Error(verification.message || "Failed to verify payment");
-    }
-
-    return NextResponse.json(verification);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to verify payment" },
-      { status: 500 }
-    );
-  }
-}
-```
-
-### 5. Webhook Integration
-
-Create an API route to handle webhooks:
-
-```tsx
-// app/api/webhooks/valuepay/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
-
-export async function POST(request: NextRequest) {
-  const body = await request.text();
-  const signature = request.headers.get("x-valuepay-signature");
-
-  // Verify webhook signature
-  const expectedSignature = crypto
-    .createHmac("sha256", process.env.VALUEPAY_WEBHOOK_SECRET!)
-    .update(body)
-    .digest("hex");
-
-  if (signature !== expectedSignature) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-  }
-
-  const event = JSON.parse(body);
-
-  switch (event.type) {
-    case "payment.success":
-      await handlePaymentSuccess(event.data);
-      break;
-
-    case "payment.failed":
-      await handlePaymentFailure(event.data);
-      break;
-
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-  }
-
-  return NextResponse.json({ received: true });
-}
-
-async function handlePaymentSuccess(payment: any) {
-  // Update order status in your database
-  // Send confirmation email
-  console.log("Payment succeeded:", payment.transactionRef);
-}
-
-async function handlePaymentFailure(payment: any) {
-  // Update order status
-  // Send failure notification
-  console.log("Payment failed:", payment.transactionRef);
-}
-```
-
 ## API Reference
 
 ### ValuepayCheckout Function
@@ -492,36 +396,6 @@ interface PaymentResponse {
 - Validate all input data
 - Generate unique transaction references
 
-### 2. Error Handling
-
-```tsx
-const handleSubmit = (e: MouseEvent) => {
-  try {
-    if (
-      typeof window === "undefined" ||
-      window.ValuepayCheckout === undefined
-    ) {
-      console.error("ValuePay script not loaded");
-      return;
-    }
-
-    if (!amount || amount <= 0) {
-      alert("Please enter a valid amount");
-      return;
-    }
-
-    // Proceed with payment
-    const paymentData = {
-      /* ... */
-    };
-    window.ValuepayCheckout(paymentData);
-  } catch (error) {
-    console.error("Payment initialization failed:", error);
-    alert("Unable to process payment. Please try again.");
-  }
-};
-```
-
 ### 3. User Experience
 
 - Show loading states during script loading
@@ -538,25 +412,6 @@ const generateTransactionRef = () => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
   return `TXN_${timestamp}_${random}`;
-};
-```
-
-### 5. Testing
-
-```tsx
-// Test data for development
-const testPaymentData = {
-  public_key: process.env.NEXT_PUBLIC_VALUEPAY_PUBLIC_KEY,
-  transactionRef: makeId(15),
-  amount: 1000, // NGN 1,000
-  currency: "NGN",
-  channels: ["card", "transfer"],
-  redirect_url: "http://localhost:3000/payment/success",
-  customer: {
-    email: "test@example.com",
-    firstName: "Test",
-    lastName: "User",
-  },
 };
 ```
 
@@ -586,34 +441,6 @@ const testPaymentData = {
    - Ensure transaction references are unique
    - Check if the reference format is correct
    - Verify no special characters in the reference
-
-### Debug Mode
-
-Enable debug logging:
-
-```tsx
-const paymentData = {
-  // ... other payment data
-  debug: true, // Enable debug mode if supported
-};
-```
-
-### Script Loading Verification
-
-```tsx
-useEffect(() => {
-  const checkScriptLoaded = () => {
-    if (window.ValuepayCheckout) {
-      console.log("ValuePay script loaded successfully");
-    } else {
-      console.log("ValuePay script not yet loaded");
-      setTimeout(checkScriptLoaded, 100);
-    }
-  };
-
-  checkScriptLoaded();
-}, []);
-```
 
 ### Support
 
